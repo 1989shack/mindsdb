@@ -158,8 +158,7 @@ class InformationSchemaDataNode(DataNode):
             except Exception:
                 print(f"Can't get tables from '{ds_name}'")
 
-        df = pd.DataFrame(data, columns=columns)
-        return df
+        return pd.DataFrame(data, columns=columns)
 
     def _get_columns(self, query: ASTNode = None):
         columns = self.information_schema['COLUMNS']
@@ -206,8 +205,7 @@ class InformationSchemaDataNode(DataNode):
                 result_row[4] = i
                 result.append(result_row)
 
-        df = pd.DataFrame(result, columns=columns)
-        return df
+        return pd.DataFrame(result, columns=columns)
 
     def _get_schemata(self, query: ASTNode = None):
         columns = self.information_schema['SCHEMATA']
@@ -215,22 +213,24 @@ class InformationSchemaDataNode(DataNode):
             ['def', 'information_schema', 'utf8', 'utf8_general_ci', None]
         ]
 
-        for database_name in self.persis_datanodes:
-            data.append(['def', database_name, 'utf8mb4', 'utf8mb4_0900_ai_ci', None])
+        data.extend(
+            ['def', database_name, 'utf8mb4', 'utf8mb4_0900_ai_ci', None]
+            for database_name in self.persis_datanodes
+        )
 
         integration_names = self.integration_controller.get_all().keys()
-        for database_name in integration_names:
-            data.append(['def', database_name, 'utf8mb4', 'utf8mb4_0900_ai_ci', None])
+        data.extend(
+            ['def', database_name, 'utf8mb4', 'utf8mb4_0900_ai_ci', None]
+            for database_name in integration_names
+        )
 
-        df = pd.DataFrame(data, columns=columns)
-        return df
+        return pd.DataFrame(data, columns=columns)
 
     def _get_engines(self, query: ASTNode = None):
         columns = self.information_schema['ENGINES']
         data = [['InnoDB', 'DEFAULT', 'Supports transactions, row-level locking, and foreign keys', 'YES', 'YES', 'YES']]
 
-        df = pd.DataFrame(data, columns=columns)
-        return df
+        return pd.DataFrame(data, columns=columns)
 
     def _get_charsets(self, query: ASTNode = None):
         columns = self.information_schema['CHARACTER_SETS']
@@ -240,8 +240,7 @@ class InformationSchemaDataNode(DataNode):
             ['utf8mb4', 'UTF-8 Unicode', 'utf8mb4_general_ci', 4]
         ]
 
-        df = pd.DataFrame(data, columns=columns)
-        return df
+        return pd.DataFrame(data, columns=columns)
 
     def _get_collations(self, query: ASTNode = None):
         columns = self.information_schema['COLLATIONS']
@@ -250,15 +249,13 @@ class InformationSchemaDataNode(DataNode):
             ['latin1_swedish_ci', 'latin1', 8, 'Yes', 'Yes', 1, 'PAD SPACE']
         ]
 
-        df = pd.DataFrame(data, columns=columns)
-        return df
+        return pd.DataFrame(data, columns=columns)
 
     def _get_empty_table(self, table_name, query: ASTNode = None):
         columns = self.information_schema[table_name]
         data = []
 
-        df = pd.DataFrame(data, columns=columns)
-        return df
+        return pd.DataFrame(data, columns=columns)
 
     def query(self, query: ASTNode):
         query_tables = get_all_tables(query)

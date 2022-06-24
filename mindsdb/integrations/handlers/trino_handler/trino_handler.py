@@ -69,16 +69,15 @@ class TrinoHandler(DatabaseHandler):
         """"
         Handles the connection to a Trino instance.
         """
-        conn = connect(
+        return connect(
             host=self.host,
             port=self.port,
             user=self.user,
             catalog=self.catalog,
             schema=self.schema,
             http_scheme=self.http_scheme,
-            auth=self.auth_config
+            auth=self.auth_config,
         )
-        return conn
 
     def check_connection(self) -> StatusResponse:
         """
@@ -100,7 +99,7 @@ class TrinoHandler(DatabaseHandler):
             response.error_message = str(e)
         finally:
             cur.close()
-            if need_to_close is True:
+            if need_to_close:
                 connection.close()
         return response
 
@@ -115,8 +114,7 @@ class TrinoHandler(DatabaseHandler):
         try:
             connection = self.connect()
             cur = connection.cursor()
-            result = cur.execute(query)
-            if result:
+            if result := cur.execute(query):
                 response = Response(
                     RESPONSE_TYPE.TABLE,
                     data_frame=pd.DataFrame(
@@ -134,7 +132,7 @@ class TrinoHandler(DatabaseHandler):
             )
         finally:
             cur.close()
-            if need_to_close is True:
+            if need_to_close:
                 self.disconnect()
 
         return response
@@ -149,10 +147,8 @@ class TrinoHandler(DatabaseHandler):
         :return: list of all tables
         """
         query = "SHOW TABLES"
-        response = self.native_query(query)
-        return response
+        return self.native_query(query)
 
     def get_columns(self, table_name: str) -> Dict:
         query = f'DESCRIBE "{table_name}"'
-        response = self.native_query(query)
-        return response
+        return self.native_query(query)

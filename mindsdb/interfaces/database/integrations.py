@@ -81,7 +81,7 @@ class IntegrationController:
             session.commit()
             integration_id = integration_record.id
 
-            if len(files) > 0:
+            if files:
                 integrations_dir = Config()['paths']['integrations']
                 folder_name = f'integration_files_{company_id}_{integration_id}'
                 integration_dir = os.path.join(integrations_dir, folder_name)
@@ -186,12 +186,11 @@ class IntegrationController:
 
     def get_all(self, company_id=None, sensitive_info=True):
         integration_records = session.query(Integration).filter_by(company_id=company_id).all()
-        integration_dict = {}
-        for record in integration_records:
-            if record is None or record.data is None:
-                continue
-            integration_dict[record.name] = self._get_integration_record_data(record, sensitive_info)
-        return integration_dict
+        return {
+            record.name: self._get_integration_record_data(record, sensitive_info)
+            for record in integration_records
+            if record is not None and record.data is not None
+        }
 
     def check_connections(self):
         connections = {}
@@ -256,14 +255,12 @@ class IntegrationController:
         if integration_type not in self.handler_modules:
             raise Exception(f"Cant find handler for '{integration_name}' ({integration_type})")
 
-        handler = self.create_handler(
+        return self.create_handler(
             name=integration_name,
             handler_type=integration_type,
             connection_data=integration_data,
-            company_id=company_id
+            company_id=company_id,
         )
-
-        return handler
 
     def _load_handler_modules(self):
         mindsdb_path = Path(importlib.util.find_spec('mindsdb').origin).parent

@@ -62,7 +62,7 @@ class UserFlowTest_1(unittest.TestCase):
         assert res.status_code == 404
 
         test_integration_data = {}
-        test_integration_data.update(config['integrations']['default_mariadb'])
+        test_integration_data |= config['integrations']['default_mariadb']
         test_integration_data['publish'] = True
         test_integration_data['database_name'] = TEST_INTEGRATION
         res = requests.put(f'{HTTP_API_ROOT}/config/integrations/{TEST_INTEGRATION}', json={'params': test_integration_data})

@@ -41,17 +41,16 @@ def query_df(df, query, session=None):
     def adapt_query(node, is_table, **kwargs):
         if is_table:
             return
-        if isinstance(node, Identifier):
-            if len(node.parts) > 1:
-                node.parts = [node.parts[-1]]
-                return node
-        if isinstance(node, Function):
-            if node.op.lower() == 'database' and len(node.args) == 0:
-                if session is not None:
-                    cur_db = session.database
-                else:
-                    cur_db = None
-                return Constant(cur_db)
+        if isinstance(node, Identifier) and len(node.parts) > 1:
+            node.parts = [node.parts[-1]]
+            return node
+        if (
+            isinstance(node, Function)
+            and node.op.lower() == 'database'
+            and len(node.args) == 0
+        ):
+            cur_db = session.database if session is not None else None
+            return Constant(cur_db)
 
     query_traversal(query_ast, adapt_query)
 

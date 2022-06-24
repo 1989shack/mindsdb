@@ -23,14 +23,10 @@ class IntegrationDataNode(DataNode):
 
     def get_tables(self):
         response = self.integration_handler.get_tables()
-        if response.type is RESPONSE_TYPE.TABLE:
-            result_dict = response.data_frame.to_dict(orient='records')
-            result = []
-            for row in result_dict:
-                result.append(TablesRow.from_dict(row))
-            return result
-        else:
+        if response.type is not RESPONSE_TYPE.TABLE:
             raise Exception(f"Can't get tables: {response.error_message}")
+        result_dict = response.data_frame.to_dict(orient='records')
+        return [TablesRow.from_dict(row) for row in result_dict]
 
     def has_table(self, tableName):
         return True

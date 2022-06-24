@@ -58,9 +58,12 @@ class ModelController():
 
         while True:
             semaphor_record = session.query(Semaphor).filter_by(entity_id=id, entity_type='predictor').first()
-            if semaphor_record is not None:
-                if mode == 'read' and semaphor_record.action == 'read':
-                    return True
+            if (
+                semaphor_record is not None
+                and mode == 'read'
+                and semaphor_record.action == 'read'
+            ):
+                return True
             try:
                 semaphor_record = Semaphor(entity_id=id, entity_type='predictor', action=mode)
                 session.add(semaphor_record)
@@ -135,14 +138,12 @@ class ModelController():
         if kwargs.get('ignore_columns') is not None:
             problem_definition['ignore_features'] = kwargs['ignore_columns']
 
-        json_ai_override = {}
         json_ai_keys = list(lightwood.JsonAI.__dict__['__annotations__'].keys())
-        for k in kwargs:
-            if k in json_ai_keys:
-                json_ai_override[k] = kwargs[k]
-
-        if (
-            problem_definition.get('ignore_features') is not None and isinstance(problem_definition['ignore_features'], list) is False
+        json_ai_override = {k: kwargs[k] for k in kwargs if k in json_ai_keys}
+        if problem_definition.get(
+            'ignore_features'
+        ) is not None and not isinstance(
+            problem_definition['ignore_features'], list
         ):
             problem_definition['ignore_features'] = [problem_definition['ignore_features']]
 
@@ -173,7 +174,7 @@ class ModelController():
                     created_at = model.get('created_at')
                     if isinstance(created_at, str):
                         created_at = parse_datetime(created_at)
-                    if isinstance(model.get('created_at'), datetime.datetime) is False:
+                    if not isinstance(model.get('created_at'), datetime.datetime):
                         continue
                     if (datetime.datetime.now() - created_at) < datetime.timedelta(hours=1):
                         count += 1
@@ -292,25 +293,24 @@ class ModelController():
                 if psutil.virtual_memory().available < 1.2 * pow(10, 9):
                     self.predictor_cache = {}
 
-                if predictor_data['status'] == 'complete':
-                    self.fs_store.get(fs_name, fs_name, self.config['paths']['predictors'])
-                    self.predictor_cache[name] = {
-                        'predictor': lightwood.predictor_from_state(
-                            os.path.join(self.config['paths']['predictors'], fs_name),
-                            predictor_record.code
-                        ),
-                        'updated_at': predictor_record.updated_at,
-                        'created': datetime.datetime.now(),
-                        'code': predictor_record.code,
-                        'pickle': str(os.path.join(self.config['paths']['predictors'], fs_name))
-                    }
-                else:
+                if predictor_data['status'] != 'complete':
                     raise Exception(
                         f'Trying to predict using predictor {original_name} with status: {predictor_data["status"]}. Error is: {predictor_data.get("error", "unknown")}'
                     )
+                self.fs_store.get(fs_name, fs_name, self.config['paths']['predictors'])
+                self.predictor_cache[name] = {
+                    'predictor': lightwood.predictor_from_state(
+                        os.path.join(self.config['paths']['predictors'], fs_name),
+                        predictor_record.code
+                    ),
+                    'updated_at': predictor_record.updated_at,
+                    'created': datetime.datetime.now(),
+                    'code': predictor_record.code,
+                    'pickle': str(os.path.join(self.config['paths']['predictors'], fs_name))
+                }
             predictions = self.predictor_cache[name]['predictor'].predict(df)
-            # Bellow is useful for debugging caching and storage issues
-            # del self.predictor_cache[name]
+                # Bellow is useful for debugging caching and storage issues
+                # del self.predictor_cache[name]
 
         predictions = predictions.to_dict(orient='records')
         after_predict_hook(
@@ -321,48 +321,46 @@ class ModelController():
             rows_out_count=len(predictions)
         )
         target = predictor_record.to_predict[0]
-        if pred_format in ('explain', 'dict', 'dict&explain'):
-            explain_arr = []
-            dict_arr = []
-            for i, row in enumerate(predictions):
-                obj = {
-                    target: {
-                        'predicted_value': row['prediction'],
-                        'confidence': row.get('confidence', None),
-                        'anomaly': row.get('anomaly', None),
-                        'truth': row.get('truth', None)
-                    }
-                }
-                if 'lower' in row:
-                    obj[target]['confidence_lower_bound'] = row.get('lower', None)
-                    obj[target]['confidence_upper_bound'] = row.get('upper', None)
-
-                explain_arr.append(obj)
-
-                td = {'predicted_value': row['prediction']}
-                for col in df.columns:
-                    if col in row:
-                        td[col] = row[col]
-                    elif f'order_{col}' in row:
-                        td[col] = row[f'order_{col}']
-                    elif f'group_{col}' in row:
-                        td[col] = row[f'group_{col}']
-                    else:
-                        orginal_index = row.get('original_index')
-                        if orginal_index is None:
-                            log.warning('original_index is None')
-                            orginal_index = i
-                        td[col] = df.iloc[orginal_index][col]
-                dict_arr.append({target: td})
-            if pred_format == 'explain':
-                return explain_arr
-            elif pred_format == 'dict':
-                return dict_arr
-            elif pred_format == 'dict&explain':
-                return dict_arr, explain_arr
-        # New format -- Try switching to this in 2-3 months for speed, for now above is ok
-        else:
+        if pred_format not in {'explain', 'dict', 'dict&explain'}:
             return predictions
+        explain_arr = []
+        dict_arr = []
+        for i, row in enumerate(predictions):
+            obj = {
+                target: {
+                    'predicted_value': row['prediction'],
+                    'confidence': row.get('confidence', None),
+                    'anomaly': row.get('anomaly', None),
+                    'truth': row.get('truth', None)
+                }
+            }
+            if 'lower' in row:
+                obj[target]['confidence_lower_bound'] = row.get('lower', None)
+                obj[target]['confidence_upper_bound'] = row.get('upper', None)
+
+            explain_arr.append(obj)
+
+            td = {'predicted_value': row['prediction']}
+            for col in df.columns:
+                if col in row:
+                    td[col] = row[col]
+                elif f'order_{col}' in row:
+                    td[col] = row[f'order_{col}']
+                elif f'group_{col}' in row:
+                    td[col] = row[f'group_{col}']
+                else:
+                    orginal_index = row.get('original_index')
+                    if orginal_index is None:
+                        log.warning('original_index is None')
+                        orginal_index = i
+                    td[col] = df.iloc[orginal_index][col]
+            dict_arr.append({target: td})
+        if pred_format == 'dict&explain':
+            return dict_arr, explain_arr
+        elif pred_format == 'dict':
+            return dict_arr
+        elif pred_format == 'explain':
+            return explain_arr
 
     @mark_process(name='analyse')
     def analyse_dataset(self, df: DataFrame, company_id: int) -> lightwood.DataAnalysis:
@@ -410,14 +408,13 @@ class ModelController():
             data['status'] = 'editable'
         elif 'training_log' in predictor_record.data:
             data['status'] = 'training'
-        elif 'error' not in predictor_record.data:
-            data['status'] = 'complete'
         else:
-            data['status'] = 'error'
-
-        if data.get('accuracies', None) is not None:
-            if len(data['accuracies']) > 0:
-                data['accuracy'] = float(np.mean(list(data['accuracies'].values())))
+            data['status'] = 'complete'
+        if (
+            data.get('accuracies', None) is not None
+            and len(data['accuracies']) > 0
+        ):
+            data['accuracy'] = float(np.mean(list(data['accuracies'].values())))
         return data
 
     def get_model_description(self, name: str, company_id: int):
@@ -428,12 +425,14 @@ class ModelController():
 
         :returns: Dictionary of the analysis (meant to be foramtted by the APIs and displayed as json/yml/whatever)
         """ # noqa
-        model_description = {}
         model_data = self.get_model_data(name, company_id)
 
-        model_description['accuracies'] = model_data['accuracies']
-        model_description['column_importances'] = model_data['column_importances']
-        model_description['outputs'] = [model_data['predict']]
+        model_description = {
+            'accuracies': model_data['accuracies'],
+            'column_importances': model_data['column_importances'],
+            'outputs': [model_data['predict']],
+        }
+
         model_description['inputs'] = [col for col in model_data['dtype_dict'] if col not in model_description['outputs']]
         model_description['datasource'] = model_data.get('data_source_name')
         model_description['model'] = ' --> '.join(str(k) for k in model_data['json_ai'])
@@ -444,12 +443,24 @@ class ModelController():
         models = []
         for db_p in db.session.query(db.Predictor).filter_by(company_id=company_id):
             model_data = self.get_model_data(db_p.name, company_id=company_id)
-            reduced_model_data = {}
+            reduced_model_data = {
+                k: model_data.get(k, None)
+                for k in [
+                    'name',
+                    'version',
+                    'is_active',
+                    'predict',
+                    'status',
+                    'current_phase',
+                    'accuracy',
+                    'data_source',
+                    'update',
+                    'data_source_name',
+                    'mindsdb_version',
+                    'error',
+                ]
+            }
 
-            for k in ['name', 'version', 'is_active', 'predict', 'status',
-                      'current_phase', 'accuracy', 'data_source', 'update',
-                      'data_source_name', 'mindsdb_version', 'error']:
-                reduced_model_data[k] = model_data.get(k, None)
 
             for k in ['train_end_at', 'updated_at', 'created_at']:
                 reduced_model_data[k] = model_data.get(k, None)
@@ -477,8 +488,9 @@ class ModelController():
         if (
             is_cloud is True
             and model.get('status') in ['generating', 'training']
-            and isinstance(model.get('created_at'), str) is True
-            and (datetime.datetime.now() - parse_datetime(model.get('created_at'))) < datetime.timedelta(hours=1)
+            and isinstance(model.get('created_at'), str)
+            and (datetime.datetime.now() - parse_datetime(model.get('created_at')))
+            < datetime.timedelta(hours=1)
         ):
             raise Exception('You are unable to delete models currently in progress, please wait before trying again')
 
@@ -562,8 +574,7 @@ class ModelController():
 
     def code_from_json_ai(self, json_ai: dict, company_id=None):
         json_ai = lightwood.JsonAI.from_dict(json_ai)
-        code = lightwood.code_from_json_ai(json_ai)
-        return code
+        return lightwood.code_from_json_ai(json_ai)
 
     def edit_code(self, name: str, code: str, company_id=None):
         """Edit an existing predictor's code"""

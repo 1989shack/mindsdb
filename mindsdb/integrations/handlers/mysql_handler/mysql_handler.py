@@ -127,7 +127,7 @@ class MySQLHandler(DatabaseHandler):
                     error_message=str(e)
                 )
 
-        if need_to_close is True:
+        if need_to_close:
             self.disconnect()
 
         return response
@@ -145,13 +145,11 @@ class MySQLHandler(DatabaseHandler):
         Get a list with all of the tabels in MySQL
         """
         q = "SHOW TABLES;"
-        result = self.native_query(q)
-        return result
+        return self.native_query(q)
 
     def get_columns(self, table_name) -> Response:
         """
         Show details about the table
         """
         q = f"DESCRIBE {table_name};"
-        result = self.native_query(q)
-        return result
+        return self.native_query(q)

@@ -1006,14 +1006,17 @@ SESSION_TRACK = SESSION_TRACK()
 ALL = vars()
 
 def VAR_NAME(val, prefix=''):
-  global ALL
+    global ALL
 
-  for key in ALL.keys():
-    value = ALL[key]
-    if value == val and key != 'val':
-      if prefix == '' or (prefix != '' and prefix == key[:len(prefix)]):
-        return key
-  return None
+    for key in ALL.keys():
+        value = ALL[key]
+        if (
+            value == val
+            and key != 'val'
+            and prefix in ['', key[: len(prefix)]]
+        ):
+            return key
+    return None
 
 def getConstName(consts, value):
     attrs = [x for x in dir(consts) if x.startswith('__') is False]

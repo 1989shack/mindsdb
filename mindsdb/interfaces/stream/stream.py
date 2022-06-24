@@ -28,4 +28,4 @@ class StreamController():
                 raise Exception(f'Unkonw database integration type for: {db_alias}')
             self.known_dbs[integration['type']](self.config, db_alias, integration).setup()
         except Exception as e:
-            logger.warning('Failed to setup stream for ' + db_alias + f', error: {e}')
+            logger.warning(f'Failed to setup stream for {db_alias}' + f', error: {e}')

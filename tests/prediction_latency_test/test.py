@@ -65,11 +65,7 @@ class AITableWhere(BasePredictor):
 
     def _get_select_condition(self, row):
         columns = list(self.df.columns)
-        condition = []
-        for header, value in zip(columns, row):
-            # if isinstance(value, str) and ' ' in value:
-            condition.append(f"{header}='{value}'")
-
+        condition = [f"{header}='{value}'" for header, value in zip(columns, row)]
         return " AND ".join(condition)
 
     def predict(self, row_number=1):

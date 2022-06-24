@@ -8,25 +8,18 @@ from mindsdb.utilities.fs import get_or_create_data_dir, create_dirs_recursive
 from mindsdb.utilities.functions import args_parse, is_notebook
 from mindsdb.utilities.telemetry import telemetry_file_exists, disable_telemetry
 
-is_ray_worker = False
-if sys.argv[0].endswith('ray/workers/default_worker.py'):
-    is_ray_worker = True
-
+is_ray_worker = bool(sys.argv[0].endswith('ray/workers/default_worker.py'))
 is_alembic = os.path.basename(sys.argv[0]).split('.')[0] == 'alembic'
 
 if not is_ray_worker:
     try:
-        if not is_notebook() and not is_alembic:
-
-            args = args_parse()
-        else:
-            args = None
+        args = args_parse() if not is_notebook() and not is_alembic else None
     except Exception:
         # This fials in some notebooks ... check above for is_notebook is still needed because even if the exception is caught trying to read the arg still leads to failure in other notebooks... notebooks a
         args = None
 
     # ---- CHECK SYSTEM ----
-    if not (sys.version_info[0] >= 3 and sys.version_info[1] >= 6):
+    if sys.version_info[0] < 3 or sys.version_info[1] < 6:
         print("""
     MindsDB server requires Python >= 3.7 to run
 

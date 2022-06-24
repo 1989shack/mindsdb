@@ -18,8 +18,7 @@ class PredictorList(Resource):
     @ns_conf.doc('list_predictors')
     def get(self):
         '''List all predictors'''
-        models = request.model_interface.get_models()
-        return models
+        return request.model_interface.get_models()
 
 
 @ns_conf.route('/<name>')
@@ -54,7 +53,7 @@ class Predictor(Resource):
         except Exception:
             kwargs = None
 
-        if isinstance(kwargs, dict) is False:
+        if not isinstance(kwargs, dict):
             kwargs = {}
 
         if 'equal_accuracy_for_all_output_categories' not in kwargs:
@@ -68,7 +67,7 @@ class Predictor(Resource):
 
         integration_name = data.get('integration')
         query = data.get('query')
-        if isinstance(integration_name, str) is False or isinstance(query, str) is False:
+        if not isinstance(integration_name, str) or not isinstance(query, str):
             return http_error(400, 'Error', 'Parameters should contain integration and query')
 
         integration_meta = request.integration_controller.get(integration_name)
@@ -140,11 +139,10 @@ class PredictorPredict(Resource):
         when = request.json.get('when')
 
         # list is a required type for TS prediction
-        if isinstance(when, (dict, list)) is False or len(when) == 0:
+        if not isinstance(when, (dict, list)) or len(when) == 0:
             return 'No data provided for the predictions', 400
 
-        results = request.model_interface.predict(name, when, 'explain')
-        return results
+        return request.model_interface.predict(name, when, 'explain')
 
 
 @ns_conf.route('/<name>/predict_datasource')

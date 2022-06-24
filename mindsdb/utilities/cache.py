@@ -78,9 +78,9 @@ class RedisCache(BaseCache):
     def __decode(self, data):
 
         if isinstance(data, dict):
-            return dict((self.__decode(x), self.__decode(data[x])) for x in data)
+            return {self.__decode(x): self.__decode(data[x]) for x in data}
         if isinstance(data, list):
-            return list(self.__decode(x) for x in data)
+            return [self.__decode(x) for x in data]
         # assume it is string
         return data.decode("utf8")
 
@@ -107,8 +107,7 @@ class RedisCache(BaseCache):
         return iter(self.__decode(self.client.keys()))
 
     def __next__(self):
-        for i in self.__decode(self.client.keys()):
-            yield i
+        yield from self.__decode(self.client.keys())
 
     def __delitem__(self, key):
         key = f"{self.prefix}_key"

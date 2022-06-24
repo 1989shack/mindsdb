@@ -85,17 +85,18 @@ class Responce(Responder):
 
             data = []
             all_columns = list(model['dtype_dict'].keys())   # [k for k in pred_dict_arr[0] if k in columns]
-            min_max_keys = []
-            for col in predicted_columns:
-                if model['dtype_dict'][col] in (dtype.integer, dtype.float):
-                    min_max_keys.append(col)
+            min_max_keys = [
+                col
+                for col in predicted_columns
+                if model['dtype_dict'][col] in (dtype.integer, dtype.float)
+            ]
 
             for i in range(len(pred_dict_arr)):
                 row = {}
                 explanation = explanations[i]
 
                 for value in pred_dict_arr[i].values():
-                    row.update(value)
+                    row |= value
                 if 'predicted_value' in row:
                     del row['predicted_value']
                 for key in pred_dict_arr[i]:
@@ -105,13 +106,13 @@ class Responce(Responder):
                         row[key] = None
 
                 for key in predicted_columns:
-                    row[key + '_confidence'] = explanation[key]['confidence']
-                    row[key + '_explain'] = explanation[key]
+                    row[f'{key}_confidence'] = explanation[key]['confidence']
+                    row[f'{key}_explain'] = explanation[key]
                 for key in min_max_keys:
                     if 'confidence_lower_bound' in explanation[key]:
-                        row[key + '_min'] = explanation[key]['confidence_lower_bound']
+                        row[f'{key}_min'] = explanation[key]['confidence_lower_bound']
                     if 'confidence_upper_bound' in explanation[key]:
-                        row[key + '_max'] = explanation[key]['confidence_upper_bound']
+                        row[f'{key}_max'] = explanation[key]['confidence_upper_bound']
                 data.append(row)
 
         else:
@@ -129,16 +130,17 @@ class Responce(Responder):
 
             keys = list(data[0].keys())
             del_id = '_id' in false_filter
-            if len(true_filter) > 0:
-                for row in data:
+            for row in data:
+                if true_filter:
                     for key in keys:
-                        if key != '_id':
-                            if key not in true_filter:
-                                del row[key]
-                        elif del_id:
+                        if (
+                            key != '_id'
+                            and key not in true_filter
+                            or key == '_id'
+                            and del_id
+                        ):
                             del row[key]
-            else:
-                for row in data:
+                else:
                     for key in false_filter:
                         if key in row:
                             del row[key]

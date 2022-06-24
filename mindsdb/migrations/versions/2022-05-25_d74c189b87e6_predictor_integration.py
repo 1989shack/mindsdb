@@ -53,23 +53,26 @@ def upgrade():
         if 'source_type' not in data:
             continue
         integration_name = data.get('source_type')
-        if isinstance(integration_name, str) is False or len(integration_name) == 0:
+        if not isinstance(integration_name, str) or len(integration_name) == 0:
             continue
         if integration_name.lower() == 'file':
             integration_name = 'files'
 
         fetch_data_query = data.get('source')
-        if isinstance(fetch_data_query, dict) is False:
+        if not isinstance(fetch_data_query, dict):
             continue
 
         if integration_name == 'files':
             file_name = fetch_data_query.get('mindsdb_file_name')
-            if isinstance(file_name, str) is False or len(file_name) == 0:
+            if not isinstance(file_name, str) or len(file_name) == 0:
                 continue
             fetch_data_query = f'select * from {file_name}'
         else:
             fetch_data_query = fetch_data_query.get('query')
-            if isinstance(fetch_data_query, str) is False or len(fetch_data_query) == 0:
+            if (
+                not isinstance(fetch_data_query, str)
+                or len(fetch_data_query) == 0
+            ):
                 continue
 
         query = '''

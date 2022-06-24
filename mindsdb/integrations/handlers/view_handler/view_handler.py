@@ -67,17 +67,12 @@ class ViewHandler(DatabaseHandler):
         List all views
         """
         views = self.view_controller.get_all()
-        result = []
-        for view_name, view_meta in views.items():
-            result.append({
-                'table_name': view_meta['name'],
-                'table_type': 'VIEW'
-            })
-        response = Response(
-            RESPONSE_TYPE.TABLE,
-            DataFrame(result)
-        )
-        return response
+        result = [
+            {'table_name': view_meta['name'], 'table_type': 'VIEW'}
+            for view_name, view_meta in views.items()
+        ]
+
+        return Response(RESPONSE_TYPE.TABLE, DataFrame(result))
 
     def get_columns(self, table_name):
         # TODO

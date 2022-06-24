@@ -23,11 +23,11 @@ def install_dependencies(dependencies):
     if code != 0:
         output = ''
         if isinstance(outs, bytes) and len(outs) > 0:
-            output = output + 'Output: ' + outs.decode()
+            output = f'{output}Output: {outs.decode()}'
         if isinstance(errs, bytes) and len(errs) > 0:
-            if len(output) > 0:
-                output = output + '\n'
-            output = output + 'Errors: ' + errs.decode()
+            if output != "":
+                output += '\n'
+            output = f'{output}Errors: {errs.decode()}'
         result['error_message'] = output
 
     result['success'] = True

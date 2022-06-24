@@ -46,8 +46,7 @@ class Responce(Responder):
             if '_id' in doc:
                 del doc['_id']
 
-            bad_columns = [x for x in doc if x not in predictors_columns]
-            if len(bad_columns) > 0:
+            if bad_columns := [x for x in doc if x not in predictors_columns]:
                 raise Exception(f"Is no possible insert this columns to 'predictors' collection: {', '.join(bad_columns)}")
 
             if 'name' not in doc:

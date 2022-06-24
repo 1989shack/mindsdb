@@ -63,9 +63,9 @@ class SqlServerHandler(DatabaseHandler):
             log.error(f'Error connecting to SQL Server {self.database}, {e}!')
             response.error_message = str(e)
         finally:
-            if response.success is True and need_to_close:
+            if response.success and need_to_close:
                 self.disconnect()
-            if response.success is False and self.is_connected is True:
+            if not response.success and self.is_connected is True:
                 self.is_connected = False
 
         return response
@@ -83,8 +83,7 @@ class SqlServerHandler(DatabaseHandler):
         with connection.cursor(as_dict=True) as cur:
             try:
                 cur.execute(query)
-                result = cur.fetchall()
-                if result:
+                if result := cur.fetchall():
                     response = Response(
                         RESPONSE_TYPE.TABLE,
                         data_frame=pd.DataFrame(
@@ -101,7 +100,7 @@ class SqlServerHandler(DatabaseHandler):
                     error_message=str(e)
                 )
 
-        if need_to_close is True:
+        if need_to_close:
             self.disconnect()
 
         return response
@@ -126,8 +125,7 @@ class SqlServerHandler(DatabaseHandler):
             FROM {self.database}.INFORMATION_SCHEMA.TABLES
             WHERE TABLE_TYPE in ('BASE TABLE', 'VIEW');
         """
-        result = self.native_query(query)
-        return result
+        return self.native_query(query)
 
     def get_columns(self, table_name) -> Response:
         """
@@ -142,5 +140,4 @@ class SqlServerHandler(DatabaseHandler):
             WHERE
                 table_name = '{table_name}'
         """
-        result = self.native_query(q)
-        return result
+        return self.native_query(q)

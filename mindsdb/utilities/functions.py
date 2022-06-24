@@ -40,10 +40,7 @@ def cast_row_types(row, field_types):
 
 def is_notebook():
     try:
-        if 'IPKernelApp' in get_ipython().config:
-            return True
-        else:
-            return False
+        return 'IPKernelApp' in get_ipython().config
     except NameError:
         return False      # Probably standard Python interpreter
 

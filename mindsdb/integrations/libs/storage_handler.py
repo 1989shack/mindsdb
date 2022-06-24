@@ -14,7 +14,7 @@ class StorageHandler:
     Context should store anything relevant to the storage handler, e.g. CompanyID, UserID, parent handler name, among others. 
     """  # noqa
     def __init__(self, context: Dict, config=None):
-        self.config = config if config else os.getenv('MDB_STORAGE_HANDLER_CONFIG')
+        self.config = config or os.getenv('MDB_STORAGE_HANDLER_CONFIG')
         self.serializer = pickle if config.get('serializer', '') == 'pickle' else dill
         self.context = self.serializer.dumps(context)  # store serialized
 
@@ -23,8 +23,7 @@ class StorageHandler:
         return md5(serialized_key).hexdigest() + md5(self.context).hexdigest()
 
     def get(self, key):
-        serialized_value = self._get(self._get_context_key(key))
-        if serialized_value:
+        if serialized_value := self._get(self._get_context_key(key)):
             return self.serializer.loads(serialized_value)
         else:
             return None
@@ -58,8 +57,11 @@ class SqliteStorageHandler(StorageHandler):
 
     def _get(self, serialized_key):
         cur = self.connection.cursor()
-        results = list(cur.execute(f"""select value from store where key='{serialized_key}'"""))
-        if results:
+        if results := list(
+            cur.execute(
+                f"""select value from store where key='{serialized_key}'"""
+            )
+        ):
             return results[0][0]  # should always be a single match, hence the [0]s
         else:
             return []

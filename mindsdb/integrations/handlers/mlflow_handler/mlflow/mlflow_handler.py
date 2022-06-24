@@ -72,19 +72,22 @@ class MLflowHandler(PredictiveHandler):
         models = {model.name: model for model in self.connection.list_registered_models()}
         model = models[table_name]
         latest_version = model.latest_versions[-1]
-        description = {
+        return {
             'NAME': model.name,
             'USER_DESCRIPTION': model.description,
             'LAST_STATUS': latest_version.status,
-            'CREATED_AT': datetime.fromtimestamp(model.creation_timestamp//1000).strftime("%m/%d/%Y, %H:%M:%S"),
-            'LAST_UPDATED': datetime.fromtimestamp(model.last_updated_timestamp//1000).strftime("%m/%d/%Y, %H:%M:%S"),
+            'CREATED_AT': datetime.fromtimestamp(
+                model.creation_timestamp // 1000
+            ).strftime("%m/%d/%Y, %H:%M:%S"),
+            'LAST_UPDATED': datetime.fromtimestamp(
+                model.last_updated_timestamp // 1000
+            ).strftime("%m/%d/%Y, %H:%M:%S"),
             'TAGS': model.tags,
             'LAST_RUN_ID': latest_version.run_id,
             'LAST_SOURCE_PATH': latest_version.source,
             'LAST_USER_ID': latest_version.user_id,
             'LAST_VERSION': latest_version.version,
         }
-        return description
 
     def run_native_query(self, query_str: str) -> Optional[object]:
         statement = self.parser(query_str, dialect=self.dialect)
@@ -148,7 +151,7 @@ class MLflowHandler(PredictiveHandler):
 
         # get model input
         data_handler_table = getattr(stmt.from_table, data_clause).parts[-1]  # todo should be ".".join(...) if data handlers support more than one table
-        data_handler_cols = list(set([t.parts[-1] for t in stmt.targets]))
+        data_handler_cols = list({t.parts[-1] for t in stmt.targets})
 
         data_query = f"""SELECT {','.join(data_handler_cols)} FROM {data_handler_table}"""
         if stmt.where:
@@ -199,9 +202,9 @@ class MLflowHandler(PredictiveHandler):
             model_name = stmt.from_table.parts[-1]
 
         mlflow_models = [model.name for model in self.connection.list_registered_models()]
-        if not model_name in self.get_tables():
+        if model_name not in self.get_tables():
             raise Exception("Error, not found. Please create this predictor first.")
-        elif not model_name in mlflow_models:
+        elif model_name not in mlflow_models:
             raise Exception(
                 "Cannot connect with the model, it might not served. Please serve it with MLflow and try again.")
 
@@ -216,5 +219,4 @@ class MLflowHandler(PredictiveHandler):
         answer: List[object] = resp.json()
 
         predictions = pd.DataFrame({'prediction': answer})
-        out = df.join(predictions)
-        return out
+        return df.join(predictions)

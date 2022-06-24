@@ -110,7 +110,7 @@ def check_auth(username, password, scramble_func, salt, company_id, config):
                 'success': False
             }
 
-        if password != hardcoded_password and password != hardcoded_password_hash:
+        if password not in [hardcoded_password, hardcoded_password_hash]:
             log.warning(f'check auth, user={username}: password mismatch')
             return {
                 'success': False
@@ -351,16 +351,16 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
             if self.session.integration_type == 'mssql':
                 # mssql raise error if value more then this.
                 length = 0x2000
+            elif len(data) == 0:
+                length = 0xffff
             else:
-                if len(data) == 0:
-                    length = 0xffff
-                else:
-                    length = 1
-                    for row in data:
-                        if isinstance(row, dict):
-                            length = max(len(str(row[column_alias])), length)
-                        else:
-                            length = max(len(str(row[i])), length)
+                length = 1
+                for row in data:
+                    length = (
+                        max(len(str(row[column_alias])), length)
+                        if isinstance(row, dict)
+                        else max(len(str(row[i])), length)
+                    )
 
             packets.append(
                 self.packet(
@@ -510,25 +510,26 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
         executor.query_execute(sql)
 
         if executor.error is not None:
-            resp = SQLAnswer(
+            return SQLAnswer(
                 resp_type=RESPONSE_TYPE.ERROR,
                 error_code=executor.error['code'],
-                error_message=executor.error['message']
+                error_message=executor.error['message'],
             )
+
         elif executor.data is None:
-            resp = SQLAnswer(
+            return SQLAnswer(
                 resp_type=RESPONSE_TYPE.OK,
                 state_track=executor.state_track,
             )
+
         else:
-            resp = SQLAnswer(
+            return SQLAnswer(
                 resp_type=RESPONSE_TYPE.TABLE,
                 state_track=executor.state_track,
                 columns=self.to_mysql_columns(executor.columns),
                 data=executor.data,
-                status=executor.server_status
+                status=executor.server_status,
             )
-        return resp
 
     def answer_stmt_prepare(self, sql):
         executor = Executor(
@@ -600,10 +601,12 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
             packages.append(self.packet(EofPacket, status=0x0062))
         else:
             # send all
-            for row in executor.data:
-                packages.append(
-                    self.packet(BinaryResultsetRowPacket, data=row, columns=columns_def)
+            packages.extend(
+                self.packet(
+                    BinaryResultsetRowPacket, data=row, columns=columns_def
                 )
+                for row in executor.data
+            )
 
             server_status = executor.server_status or 0x0002
             packages.append(self.last_packet(status=server_status))
@@ -630,12 +633,11 @@ class MysqlProxy(SocketServer.BaseRequestHandler):
             )
             return self.send_query_answer(resp)
 
-        packages = []
         columns = self.to_mysql_columns(executor.columns)
-        for row in executor.data[fetched:limit]:
-            packages.append(
-                self.packet(BinaryResultsetRowPacket, data=row, columns=columns)
-            )
+        packages = [
+            self.packet(BinaryResultsetRowPacket, data=row, columns=columns)
+            for row in executor.data[fetched:limit]
+        ]
 
         prepared_stmt['fetched'] += len(executor.data[fetched:limit])
 

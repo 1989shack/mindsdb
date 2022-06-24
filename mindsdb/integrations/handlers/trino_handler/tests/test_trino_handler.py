@@ -22,7 +22,6 @@ class TrinoHandlerTest(unittest.TestCase):
 
     def test_0_canary(self):
         print('Running canary test')
-        assert True
         print('Canary test ran successfully')
 
     def test_1_check_connection(self):

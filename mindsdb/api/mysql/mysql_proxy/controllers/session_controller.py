@@ -64,7 +64,7 @@ class SessionController():
     def register_stmt(self, statement):
         i = 1
         while i in self.prepared_stmts and i < 100:
-            i = i + 1
+            i += 1
         if i == 100:
             raise Exception('Too many unclosed queries')
 

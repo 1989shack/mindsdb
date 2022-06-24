@@ -26,7 +26,7 @@ from mindsdb.integrations.libs.response import (
 def clean_row(row):
     n_row = []
     for cell in row:
-        if str(cell) in ['', ' ', '  ', 'NaN', 'nan', 'NA']:
+        if str(cell) in {'', ' ', '  ', 'NaN', 'nan', 'NA'}:
             n_row.append(None)
         else:
             n_row.append(cell)
@@ -128,7 +128,7 @@ class FileHandler(DatabaseHandler):
         else:
             file_list_data = file_data
 
-        col_map = dict((col, col) for col in header)
+        col_map = {col: col for col in header}
         return pd.DataFrame(file_list_data, columns=header), col_map
 
     @staticmethod
@@ -255,12 +255,11 @@ class FileHandler(DatabaseHandler):
         temp_dir = tempfile.mkdtemp(prefix='mindsdb_file_url_')
         try:
             r = requests.get(url, stream=True)
-            if r.status_code == 200:
-                with open(os.path.join(temp_dir, 'file'), 'wb') as f:
-                    for chunk in r:
-                        f.write(chunk)
-            else:
+            if r.status_code != 200:
                 raise Exception(f'Responce status code is {r.status_code}')
+            with open(os.path.join(temp_dir, 'file'), 'wb') as f:
+                for chunk in r:
+                    f.write(chunk)
         except Exception as e:
             print(f'Error during getting {url}')
             print(e)
@@ -283,13 +282,9 @@ class FileHandler(DatabaseHandler):
 
     def get_columns(self, table_name) -> Response:
         file_meta = self.file_controller.get_file_meta(table_name)
-        result = Response(
+        return Response(
             RESPONSE_TYPE.TABLE,
-            data_frame=pd.DataFrame([
-                {
-                    'Field': x,
-                    'Type': 'str'
-                } for x in file_meta['columns']
-            ])
+            data_frame=pd.DataFrame(
+                [{'Field': x, 'Type': 'str'} for x in file_meta['columns']]
+            ),
         )
-        return result

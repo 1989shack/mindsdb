@@ -34,9 +34,12 @@ class ViewController:
             query_ast = parse_sql(query, dialect='mindsdb')
 
             def inject_integration(node, is_table, **kwargs):
-                if is_table and isinstance(node, Identifier):
-                    if not node.parts[0] == integration_name:
-                        node.parts.insert(0, integration_name)
+                if (
+                    is_table
+                    and isinstance(node, Identifier)
+                    and node.parts[0] != integration_name
+                ):
+                    node.parts.insert(0, integration_name)
 
             query_traversal(query_ast, inject_integration)
 
@@ -68,7 +71,7 @@ class ViewController:
 
     def get_all(self, company_id=None):
         view_records = session.query(View).filter_by(company_id=company_id).all()
-        views_dict = {}
-        for record in view_records:
-            views_dict[record.name] = self._get_view_record_data(record)
-        return views_dict
+        return {
+            record.name: self._get_view_record_data(record)
+            for record in view_records
+        }

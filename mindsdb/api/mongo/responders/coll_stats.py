@@ -11,25 +11,21 @@ class Responce(Responder):
 
         # NOTE real answer is huge, i removed most data from it.
         res = {
-            'ns': "db.collection",
             'size': 1,
             'count': 0,
             'avgObjSize': 1,
             'storageSize': 16384,
             'capped': False,
-            'wiredTiger': {
-            },
+            'wiredTiger': {},
             'nindexes': 1,
-            'indexDetails': {
-            },
+            'indexDetails': {},
             'totalIndexSize': 16384,
-            'indexSizes': {
-                '_id_': 16384
-            },
-            'ok': 1
+            'indexSizes': {'_id_': 16384},
+            'ok': 1,
+            'ns': f"{db}.{collection}",
         }
 
-        res['ns'] = f"{db}.{collection}"
+
         if db == 'mindsdb' and collection == 'predictors':
             res['count'] = len(mindsdb_env['model_interface'].get_models())
 

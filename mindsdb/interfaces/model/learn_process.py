@@ -131,8 +131,12 @@ def run_fit(predictor_id: int, df: pd.DataFrame) -> None:
 
         # getting training time for each tried model. it is possible to do
         # after training only
-        fit_mixers = list(predictor.runtime_log[x] for x in predictor.runtime_log
-                          if isinstance(x, tuple) and x[0] == "fit_mixer")
+        fit_mixers = [
+            predictor.runtime_log[x]
+            for x in predictor.runtime_log
+            if isinstance(x, tuple) and x[0] == "fit_mixer"
+        ]
+
         submodel_data = predictor_record.data.get("submodel_data", [])
         # add training time to other mixers info
         if submodel_data and fit_mixers and len(submodel_data) == len(fit_mixers):

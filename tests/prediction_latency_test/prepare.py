@@ -19,10 +19,7 @@ class Dataset:
         self.name = name
         self.target = kwargs.get("target")
         self.handler_file = kwargs.get("handler_file", None)
-        if self.handler_file is not None:
-            self.handler = self._get_handler()
-        else:
-            self.handler = None
+        self.handler = self._get_handler() if self.handler_file is not None else None
 
     def _get_handler(self):
         spec = importlib.util.spec_from_file_location("common", os.path.abspath(self.handler_file))
@@ -210,15 +207,20 @@ def prepare_db():
                     try:
                         if '.' in row[i]:
                             row[i] = float(row[i])
-                        else:
-                            if row[i].isdigit():
-                                row[i] = int(row[i])
+                        elif row[i].isdigit():
+                            row[i] = int(row[i])
                     except Exception as e:
                         print(e)
 
-                query('INSERT INTO ' + schema.database + '.' + dataset.name + ' VALUES ({})'.format(
-                    str(row).lstrip('[').rstrip(']')
-                ))
+                query(
+                    (
+                        'INSERT INTO '
+                        + schema.database
+                        + '.'
+                        + dataset.name
+                        + f" VALUES ({str(row).lstrip('[').rstrip(']')})"
+                    )
+                )
 
 def query(query):
 

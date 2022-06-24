@@ -61,7 +61,7 @@ class CompanyIndependentTest(unittest.TestCase):
         print(f'\nExecuting {inspect.stack()[0].function}')
 
         test_integration_data = {}
-        test_integration_data.update(config['integrations']['default_postgres'])
+        test_integration_data |= config['integrations']['default_postgres']
         test_integration_data['publish'] = False
 
         res = requests.put(

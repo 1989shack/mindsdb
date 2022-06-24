@@ -18,7 +18,7 @@ class Responce(Responder):
             'ns': 'qwe.$cmd.listCollections',
             'firstBatch': []
         }
-        for i, name in enumerate(models):
+        for name in models:
             cursor['firstBatch'].append({
                 'name': name,
                 'type': 'collection',

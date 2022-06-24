@@ -70,13 +70,19 @@ class RedisTest(unittest.TestCase):
         self.assertEqual(len(list(stream.read())), 0)
 
     def upload_file(self, name):
-        df = pd.DataFrame({
-            'group': ["A" for _ in range(100, 210)] + ["B" for _ in range(100, 210)],
-            'order': [x for x in range(100, 210)] + [x for x in range(200, 310)],
-            'x1': [x for x in range(100, 210)] + [x for x in range(100, 210)],
-            'x2': [x * 2 for x in range(100, 210)] + [x * 3 for x in range(100, 210)],
-            'y': [x * 3 for x in range(100, 210)] + [x * 2 for x in range(100, 210)]
-        })
+        df = pd.DataFrame(
+            {
+                'group': ["A" for _ in range(100, 210)]
+                + ["B" for _ in range(100, 210)],
+                'order': list(range(100, 210)) + list(range(200, 310)),
+                'x1': list(range(100, 210)) + list(range(100, 210)),
+                'x2': [x * 2 for x in range(100, 210)]
+                + [x * 3 for x in range(100, 210)],
+                'y': [x * 3 for x in range(100, 210)]
+                + [x * 2 for x in range(100, 210)],
+            }
+        )
+
         with tempfile.NamedTemporaryFile(mode='w+', newline='', delete=False) as f:
             df.to_csv(f, index=False)
             f.flush()
@@ -106,12 +112,11 @@ class RedisTest(unittest.TestCase):
             "order_by": ["order"],
             "horizon": 1,
             "use_previous_target": True,
-            "window": 10}
+            "window": 10,
+            "group_by": ["group"] if with_gb else [],
+        }
 
-        if with_gb:
-            ts_settings["group_by"] = ["group"]
-        else:
-            ts_settings["group_by"] = []
+
         params = {
             'integration': 'files',
             'query': f'select * from {ds_name}',

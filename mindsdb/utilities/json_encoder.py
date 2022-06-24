@@ -31,4 +31,4 @@ def json_serialiser(byte_obj):
     if isinstance(byte_obj, (bytes, bytearray)):
         # File Bytes to Base64 Bytes then to String
         return base64.b64encode(byte_obj).decode('utf-8')
-    raise ValueError('No encoding handler for data type ' + type(byte_obj))
+    raise ValueError(f'No encoding handler for data type {type(byte_obj)}')

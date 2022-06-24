@@ -59,23 +59,6 @@ class DbHandler(logging.Handler):
         source = f'file: {record.pathname} - line: {record.lineno}'
         payload = record.msg
 
-        if telemtry_enabled:
-            pass
-            # @TODO: Enable once we are sure no sensitive info is being outputed in the logs
-            # if log_type in ['INFO']:
-            #    add_breadcrumb(
-            #        category='auth',
-            #        message=str(payload),
-            #        level='info',
-            #    )
-            # Might be too much traffic if we send this for users with slow networks
-            # if log_type in ['DEBUG']:
-            #    add_breadcrumb(
-            #        category='auth',
-            #        message=str(payload),
-            #        level='debug',
-            #    )
-
         if log_type in ['ERROR', 'WARNING']:
             trace = str(traceback.format_stack(limit=20))
             trac_log = Log(log_type='traceback', source=source, payload=trace, company_id=self.company_id)
@@ -117,16 +100,8 @@ def get_logs(min_timestamp, max_timestamp, context, level, log_from, limit):
     if max_timestamp is not None:
         logs = logs.filter(Log.created_at < max_timestamp)
 
-    if context is not None:
-        # e.g. datasource/predictor and assoicated id
-        pass
-
     if level is not None:
         logs = logs.filter(Log.log_type == level)
-
-    if log_from is not None:
-        # mindsdb/native/lightwood/all
-        pass
 
     if limit is not None:
         logs = logs.limit(limit)

@@ -75,9 +75,7 @@ class OpInsertResponder(OperationResponder):
             'request_id': request_id
         }
 
-        documents = responder.handle(query, request_args, mindsdb_env, session)
-
-        return documents
+        return responder.handle(query, request_args, mindsdb_env, session)
 
     def to_bytes(self, response, request_id):
         pass
@@ -97,11 +95,7 @@ class OpMsgResponder(OperationResponder):
         flags, pos = unpack(UINT, buffer)
 
         checksum_present = bool(flags & (1 << OP_MSG_FLAGS['checksumPresent']))
-        if checksum_present:
-            msg_len = len(buffer) - 4
-        else:
-            msg_len = len(buffer)
-
+        msg_len = len(buffer) - 4 if checksum_present else len(buffer)
         # sections
         while pos < msg_len:
             kind, pos = unpack(BYTE, buffer, pos)
@@ -136,9 +130,7 @@ class OpMsgResponder(OperationResponder):
             'database': query['$db']
         }
 
-        documents = responder.handle(query, request_args, mindsdb_env, session)
-
-        return documents
+        return responder.handle(query, request_args, mindsdb_env, session)
 
     def to_bytes(self, response, request_id):
         flags = struct.pack("<I", 0)  # TODO
@@ -178,9 +170,7 @@ class OpQueryResponder(OperationResponder):
             'is_command': is_command
         }
 
-        documents = responder.handle(query, request_args, mindsdb_env, session)
-
-        return documents
+        return responder.handle(query, request_args, mindsdb_env, session)
 
     def to_bytes(self, request, request_id):
         flags = struct.pack("<i", 0)  # TODO

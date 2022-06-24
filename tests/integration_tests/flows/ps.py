@@ -14,8 +14,7 @@ def net_connections():
     for p in psutil.process_iter(['pid']):
         try:
             process = psutil.Process(p.pid)
-            connections = process.connections()
-            if connections:
+            if connections := process.connections():
                 for conn in connections:
                     # Adding pid to the returned instance
                     # for consistency with psutil.net_connections()

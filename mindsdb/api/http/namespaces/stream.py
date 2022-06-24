@@ -9,18 +9,18 @@ STREAM_INTEGRATION_TYPES = ('kafka', 'redis')
 
 def get_streams():
     streams = db.session.query(db.Stream).filter_by(company_id=request.company_id).all()
-    streams_as_dicts = []
-    for s in streams:
-        streams_as_dicts.append({
+    return [
+        {
             'name': s.name,
             'predictor': s.predictor,
             'integration': s.integration,
             'stream_in': s.stream_in,
             'stream_out': s.stream_out,
             'type': s.type,
-            'connection': s.connection_info
-        })
-    return streams_as_dicts
+            'connection': s.connection_info,
+        }
+        for s in streams
+    ]
 
 
 @ns_conf.route('/')
@@ -47,33 +47,33 @@ class Stream(Resource):
         params_keys = params.keys()
         for param in ['predictor', 'stream_in', 'stream_out']:
             if param not in params_keys:
-                return abort(400, 'Please provide "{}"'.format(param))
+                return abort(400, f'Please provide "{param}"')
         if 'integration' not in params_keys and 'connection' not in params_keys:
             return abort(400, "'integration' in case of local installation and 'connection' in case of cloud are required.")
 
         if 'integration' in params_keys:
             integration = request.integration_controller.get(params['integration'])
             if integration is None:
-                return abort(404, 'Integration "{}" doesn\'t exist'.format(params['integration']))
+                return abort(404, f"""Integration "{params['integration']}" doesn\'t exist""")
 
             if integration['type'] not in STREAM_INTEGRATION_TYPES:
-                return abort(400, 'Integration "{}" is not of type [{}]'.format(
-                    params['integration'],
-                    '/'.join(STREAM_INTEGRATION_TYPES)
-                ))
+                return abort(
+                    400,
+                    f"""Integration "{params['integration']}" is not of type [{'/'.join(STREAM_INTEGRATION_TYPES)}]""",
+                )
 
-        else:
-            # cloud
-            if 'type' not in params_keys:
-                return abort(404, "'type' parameter is required in case of cloud.")
+
+        elif 'type' in params_keys:
             # because '_' is not allowed in pod name - replace it.
             name = name.replace('_', '-')
 
+        else:
+            return abort(404, "'type' parameter is required in case of cloud.")
         if db.session.query(db.Stream).filter_by(company_id=request.company_id, name=name).first() is not None:
-            return abort(404, 'Stream "{}" already exists'.format(name))
+            return abort(404, f'Stream "{name}" already exists')
 
         if db.session.query(db.Predictor).filter_by(company_id=request.company_id, name=params['predictor']).first() is None:
-            return abort(404, 'Predictor "{}" doesn\'t exist'.format(params['predictor']))
+            return abort(404, f"""Predictor "{params['predictor']}" doesn\'t exist""")
 
         stream = db.Stream(
             company_id=request.company_id,
@@ -98,7 +98,7 @@ class Stream(Resource):
     def delete(self, name):
         stream = db.session.query(db.Stream).filter_by(company_id=request.company_id, name=name).first()
         if stream is None:
-            return abort(404, 'Stream "{}" doesn\'t exist'.format(name))
+            return abort(404, f"""Stream "{name}" doesn\'t exist""")
         db.session.delete(stream)
         db.session.commit()
 

@@ -50,7 +50,7 @@ class HandshakeResponsePacket(Packet):
 
         buffer = body
 
-        if len(body) == 32 and body[9:] == (b'\x00' * 23):
+        if len(buffer) == 32 and buffer[9:] == b'\x00' * 23:
             self.type = 'SSLRequest'
             buffer = self.capabilities.setFromBuff(buffer)
             buffer = self.max_packet_size.setFromBuff(buffer)

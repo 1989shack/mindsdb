@@ -24,7 +24,6 @@ def telemetry_file_exists(storage_dir):
 
 
 def inject_telemetry_to_static(static_folder):
-    TEXT = '<script>localStorage.isTestUser = true;</script>'
     index = Path(static_folder).joinpath('index.html')
     disable_telemetry = os.getenv('CHECK_FOR_UPDATES', '1').lower() in ['0', 'false', 'False']
     if index.is_file():
@@ -32,6 +31,7 @@ def inject_telemetry_to_static(static_folder):
             content = f.read()
         script_index = content.find('<script>')
         need_update = True
+        TEXT = '<script>localStorage.isTestUser = true;</script>'
         if TEXT not in content and disable_telemetry:
             content = content[:script_index] + TEXT + content[script_index:]
         elif not disable_telemetry and TEXT in content:

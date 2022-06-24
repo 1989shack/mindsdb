@@ -38,9 +38,7 @@ class Array(types.TypeDecorator):
     impl = types.String
 
     def process_bind_param(self, value, dialect):  # insert
-        if isinstance(value, str):
-            return value
-        elif value is None:
+        if isinstance(value, str) or value is None:
             return value
         else:
             return ',|,|,'.join(value)

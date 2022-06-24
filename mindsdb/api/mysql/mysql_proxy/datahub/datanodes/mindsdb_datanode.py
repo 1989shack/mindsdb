@@ -43,11 +43,10 @@ class MindsDBDataNode(DataNode):
 
     def get_tables(self):
         models = self.model_interface.get_models()
-        tables = []
-        for model in models:
-            tables.append(TablesRow(TABLE_NAME=model['name']))
-        tables.append(TablesRow(TABLE_NAME='predictors'))
-        tables.append(TablesRow(TABLE_NAME='databases'))
+        tables = [TablesRow(TABLE_NAME=model['name']) for model in models]
+        tables.extend(
+            (TablesRow(TABLE_NAME='predictors'), TablesRow(TABLE_NAME='databases'))
+        )
 
         return tables
 
@@ -58,7 +57,7 @@ class MindsDBDataNode(DataNode):
     def _get_model_columns(self, table_name):
         model = self.model_interface.get_model_data(name=table_name)
         dtype_dict = model.get('dtype_dict')
-        if isinstance(dtype_dict, dict) is False:
+        if not isinstance(dtype_dict, dict):
             return []
         columns = []
         columns += list(dtype_dict.keys())

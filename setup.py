@@ -36,7 +36,7 @@ def install_deps():
     for resource in default:
         if 'git+https' in resource:
             pkg = resource.split('#')[-1]
-            links.append(resource.strip() + '-9876543210')
+            links.append(f'{resource.strip()}-9876543210')
             new_pkgs.append(pkg.replace('egg=', '').rstrip())
         else:
             new_pkgs.append(resource.strip())
